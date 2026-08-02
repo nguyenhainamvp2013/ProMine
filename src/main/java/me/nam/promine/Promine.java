@@ -7,6 +7,8 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import me.nam.promine.config.ConfigManager;
+
 public class Promine implements ModInitializer {
 	public static final String MOD_ID = "promine";
 
@@ -15,16 +17,31 @@ public class Promine implements ModInitializer {
 	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
+	private static ConfigManager configManager;
+
 	@Override
 	public void onInitialize() {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!");
+		LOGGER.info("[ProMine] Initializing mod");
+		
+		// Initialize configuration manager
+		configManager = new ConfigManager();
+		configManager.loadConfig();
+		
+		// Initialize server components
+		PromineServer.initialize();
+		
+		LOGGER.info("[ProMine] Mod initialized successfully");
 	}
 
 	public static Identifier id(String path) {
 		return Identifier.of(MOD_ID, path);
+	}
+
+	public static ConfigManager getConfigManager() {
+		return configManager;
 	}
 }
