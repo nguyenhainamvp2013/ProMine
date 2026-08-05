@@ -54,15 +54,15 @@ public class MiningPlanner {
             // Distribute remainder across first items
             int reservedSlots = slotsPerItem + (index < remainder ? 1 : 0);
             
-            // Required amount = missing space + current amount to fill to max
-            int missingSpace = sampleItem.getMissingStackSpace();
-            int requiredAmount = missingSpace;
+            // Required amount = total inventory capacity for the reserved slots
+            int targetAmount = reservedSlots * sampleItem.getMaxStackSize();
             
             MiningPlan plan = new MiningPlan(
                     itemId,
                     reservedSlots,
-                    requiredAmount,
-                    sampleItem.getCount()
+                    targetAmount,
+                    sampleItem.getCount(),
+                    sampleItem.getMaxStackSize()
             );
 
             LOGGER.debug("[ProMine] Mining plan created: {}", plan);
@@ -70,7 +70,22 @@ public class MiningPlanner {
             index++;
         }
 
+        logInventorySummary(plans);
         return plans;
+    }
+
+    private void logInventorySummary(List<MiningPlan> plans) {
+        LOGGER.info("[ProMine] Inventory scanned");
+
+        for (MiningPlan plan : plans) {
+            LOGGER.info("");
+            LOGGER.info("[ProMine] Sample:");
+            LOGGER.info("{}", plan.getTargetItem());
+            LOGGER.info("Current:{}", plan.getCurrentAmount());
+            LOGGER.info("Slots:{}", plan.getReservedSlots());
+            LOGGER.info("Need:{}", plan.getMissingAmount());
+            LOGGER.info("----------------");
+        }
     }
 
     /**

@@ -2,6 +2,7 @@ package me.nam.promine.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import me.nam.promine.task.SessionController;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 
@@ -24,12 +25,19 @@ public class CommandRegistry {
 
     private static int startCommand(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
+        if (source.getPlayer() == null) {
+            source.sendFeedback(() -> Text.literal("[ProMine] This command must be executed by a player"), false);
+            return 0;
+        }
+
+        SessionController.getInstance().handleStartCommand(source.getPlayer());
         source.sendFeedback(() -> Text.literal("[ProMine] Started"), false);
         return 1;
     }
 
     private static int stopCommand(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
+        SessionController.getInstance().handleStopCommand();
         source.sendFeedback(() -> Text.literal("[ProMine] Stopped"), false);
         return 1;
     }

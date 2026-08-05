@@ -16,25 +16,33 @@ public class InventoryAnalyzer {
     private static final Logger LOGGER = LoggerFactory.getLogger("promine");
 
     private InventoryScanner scanner;
+    private SampleDetector sampleDetector;
     private InventorySnapshot lastSnapshot;
 
     public InventoryAnalyzer() {
         this.scanner = new InventoryScanner();
+        this.sampleDetector = new SampleDetector();
     }
 
     /**
      * Scan the player inventory and analyze it.
      */
     public void scan(PlayerInventory playerInventory) {
-        LOGGER.debug("[ProMine] InventoryAnalyzer starting scan");
+        LOGGER.debug("[ProMine] InventoryAnalyzer.scan() - Starting inventory scan");
         
-        // Get raw snapshot
+        // Get raw snapshot from scanner
         InventorySnapshot rawSnapshot = scanner.scan(playerInventory);
+        LOGGER.debug("[ProMine] InventoryAnalyzer.scan() - Scanner returned {} filled slots", 
+            rawSnapshot.getFilledSlots().size());
 
-        // Detect sample items (non-full stacks)
-        List<SampleItem> sampleItems = detectSampleItems(rawSnapshot.getFilledSlots());
+        // Use SampleDetector for sample detection (single source of truth)
+        sampleDetector.clear();
+        sampleDetector.setInventorySlots(rawSnapshot.getFilledSlots());
+        List<SampleItem> sampleItems = sampleDetector.detectSamples();
+        LOGGER.debug("[ProMine] InventoryAnalyzer.scan() - SampleDetector detected {} samples", 
+            sampleItems.size());
 
-        // Create final snapshot with sample items
+        // Create final snapshot with detected samples
         this.lastSnapshot = new InventorySnapshot(
                 rawSnapshot.getAllSlots(),
                 rawSnapshot.getFilledSlots(),
@@ -48,7 +56,9 @@ public class InventoryAnalyzer {
 
     /**
      * Detect items that are not full stacks.
-     * Group by item ID.
+     * Group by item ID - BUT THIS IS DEPRECATED.
+     * Use SampleDetector instead for proper multi-slot aggregation.
+     * This method is kept for backward compatibility but not used in the main flow.
      */
     private List<SampleItem> detectSampleItems(List<InventorySlot> filledSlots) {
         Map<String, SampleItem> samplesByItemId = new HashMap<>();
@@ -64,9 +74,10 @@ public class InventoryAnalyzer {
                 );
 
                 // Log detection
-                LOGGER.debug("[ProMine] Sample item detected: {}", sample);
+                LOGGER.debug("[ProMine] InventoryAnalyzer.detectSampleItems() - Sample detected: {}", sample);
 
-                // Store (using itemId as key for grouping)
+                // ISSUE: This overwrites previous entries with same itemId!
+                // Multiple stacks of the same item are not aggregated here.
                 samplesByItemId.put(itemId, sample);
             }
         }
@@ -83,7 +94,7 @@ public class InventoryAnalyzer {
         }
 
         double usage = lastSnapshot.getUsagePercentage();
-        LOGGER.info("[ProMine] Inventory usage: {:.1f}% ({}/{} slots)",
+        LOGGER.info("[ProMine] Inventory usage: {}% ({}/{} slots)",
                 String.format("%.1f", usage),
                 lastSnapshot.getUsedSlots(),
                 lastSnapshot.getTotalCapacity());

@@ -27,7 +27,7 @@ public class InventoryScanner {
      * Scan inventory and create a snapshot (excluding hotbar).
      */
     public InventorySnapshot scan(PlayerInventory playerInventory) {
-        LOGGER.debug("[ProMine] Starting inventory scan");
+        LOGGER.debug("[ProMine] InventoryScanner.scan() - Starting inventory scan");
 
         List<InventorySlot> allSlots = new ArrayList<>();
         List<InventorySlot> filledSlots = new ArrayList<>();
@@ -45,6 +45,8 @@ public class InventoryScanner {
                 emptySlots.add(slot);
             } else {
                 filledSlots.add(slot);
+                LOGGER.debug("[ProMine] InventoryScanner - Found item: {} x{}/{}", 
+                    slot.getItemId(), slot.getCount(), slot.getMaxStackSize());
             }
         }
 

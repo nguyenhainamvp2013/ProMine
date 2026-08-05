@@ -8,13 +8,15 @@ public class MiningPlan {
     private int reservedSlots;      // Number of inventory slots to reserve
     private int requiredAmount;     // Total items needed (from all stacks)
     private int currentAmount;      // Current count in inventory
+    private int maxStackSize;       // Maximum stack size for this item
     private boolean completed;      // Whether mining is complete for this item
 
-    public MiningPlan(String targetItem, int reservedSlots, int requiredAmount, int currentAmount) {
+    public MiningPlan(String targetItem, int reservedSlots, int requiredAmount, int currentAmount, int maxStackSize) {
         this.targetItem = targetItem;
         this.reservedSlots = reservedSlots;
         this.requiredAmount = requiredAmount;
         this.currentAmount = currentAmount;
+        this.maxStackSize = maxStackSize > 0 ? maxStackSize : 64;
         this.completed = false;
     }
 
@@ -59,7 +61,7 @@ public class MiningPlan {
     }
 
     public int getCapacity() {
-        return reservedSlots * 64; // Assuming max stack size of 64
+        return reservedSlots * maxStackSize;
     }
 
     @Override

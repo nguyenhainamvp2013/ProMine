@@ -2,6 +2,8 @@ package me.nam.promine.task;
 
 import me.nam.promine.inventory.InventoryAnalyzer;
 import me.nam.promine.inventory.InventorySnapshot;
+import me.nam.promine.inventory.SampleDetector;
+import me.nam.promine.inventory.SampleItem;
 import me.nam.promine.mining.MiningPlan;
 import me.nam.promine.mining.MiningPlanner;
 import net.minecraft.entity.player.PlayerInventory;
@@ -22,11 +24,13 @@ public class SessionManager {
 
     private MiningSession currentSession;
     private InventoryAnalyzer inventoryAnalyzer;
+    private SampleDetector sampleDetector;
     private MiningPlanner miningPlanner;
     private boolean isRunning;
 
     public SessionManager() {
         this.inventoryAnalyzer = new InventoryAnalyzer();
+        this.sampleDetector = new SampleDetector();
         this.miningPlanner = new MiningPlanner();
         this.isRunning = false;
     }
@@ -111,28 +115,42 @@ public class SessionManager {
         }
     }
 
-    /**
-     * Handle SCANNING state: scan inventory and transition to PLANNING.
-     */
     private void handleScanning(PlayerInventory playerInventory) {
         if (playerInventory == null) {
             LOGGER.error("[ProMine] PlayerInventory is null, cannot scan");
             return;
         }
 
-        // Scan inventory
+        LOGGER.debug("[ProMine] handleScanning() - Starting inventory scan");
+        
+        // InventoryAnalyzer uses SampleDetector internally - single source of truth
         inventoryAnalyzer.scan(playerInventory);
         InventorySnapshot snapshot = inventoryAnalyzer.getLastSnapshot();
-
         LOGGER.info("[ProMine] Inventory snapshot: {}", snapshot);
+        LOGGER.debug("[ProMine] handleScanning() - Snapshot contains {} samples", snapshot.getSampleItems().size());
 
-        // Transition to PLANNING
-        currentSession.setCurrentState(SessionState.PLANNING);
-        LOGGER.info("[ProMine] STATE TRANSITION: {} -> {}", SessionState.SCANNING, SessionState.PLANNING);
-        LOGGER.info("[ProMine] {}", SessionState.PLANNING.getDescription());
+        // Get samples that were already detected by InventoryAnalyzer
+        List<SampleItem> samples = snapshot.getSampleItems();
+        LOGGER.debug("[ProMine] handleScanning() - Using {} samples from InventoryAnalyzer", samples.size());
 
-        // Execute planning logic
-        handlePlanning();
+        LOGGER.info("[ProMine] Inventory scanned");
+        if (samples.isEmpty()) {
+            LOGGER.info("[ProMine] No sample items detected");
+        } else {
+            LOGGER.debug("[ProMine] handleScanning() - {} samples found, logging details:", samples.size());
+            for (SampleItem sample : samples) {
+                LOGGER.info("[ProMine] Sample:");
+                LOGGER.info("[ProMine] {}", sample.getItemId());
+                LOGGER.info("[ProMine] Current:{}", sample.getCurrentAmount());
+                LOGGER.info("[ProMine] Slots:{}", sample.getReservedSlots());
+                LOGGER.info("[ProMine] Need:{}", sample.getMissingAmount());
+                LOGGER.info("[ProMine] ----------------");
+            }
+        }
+
+        currentSession.setCurrentState(SessionState.IDLE);
+        LOGGER.info("[ProMine] STATE TRANSITION: {} -> {}", SessionState.SCANNING, SessionState.IDLE);
+        LOGGER.info("[ProMine] {}", SessionState.IDLE.getDescription());
     }
 
     /**
