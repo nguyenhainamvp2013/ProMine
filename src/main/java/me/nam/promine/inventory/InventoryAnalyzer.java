@@ -39,15 +39,16 @@ public class InventoryAnalyzer {
         sampleDetector.clear();
         sampleDetector.setInventorySlots(rawSnapshot.getFilledSlots());
         List<SampleItem> sampleItems = sampleDetector.detectSamples();
+        List<SampleItem> snapshotSampleItems = new ArrayList<>(sampleItems);
         LOGGER.debug("[ProMine] InventoryAnalyzer.scan() - SampleDetector detected {} samples", 
-            sampleItems.size());
+            snapshotSampleItems.size());
 
         // Create final snapshot with detected samples
         this.lastSnapshot = new InventorySnapshot(
                 rawSnapshot.getAllSlots(),
                 rawSnapshot.getFilledSlots(),
                 rawSnapshot.getEmptySlots(),
-                sampleItems,
+                snapshotSampleItems,
                 rawSnapshot.getTotalCapacity()
         );
 

@@ -11,12 +11,12 @@ import java.util.List;
 
 /**
  * Scans the player inventory and creates a snapshot.
- * Excludes hotbar (last 9 slots).
+ * Excludes hotbar (slots 0-8).
  */
 public class InventoryScanner {
     private static final Logger LOGGER = LoggerFactory.getLogger("promine");
     
-    // Hotbar is the last 9 slots of PlayerInventory
+    // In PlayerInventory.main: hotbar is slots 0-8, main inventory is 9-35.
     private static final int HOTBAR_SIZE = 9;
     private static final int MAIN_INVENTORY_SIZE = 27; // 3 rows of 9
 
@@ -33,10 +33,10 @@ public class InventoryScanner {
         List<InventorySlot> filledSlots = new ArrayList<>();
         List<InventorySlot> emptySlots = new ArrayList<>();
 
-        // Scan main inventory (excluding hotbar)
-        // Main inventory = 27 slots (3 rows)
-        // We scan from 0 to 26 (excluding hotbar which is 27-35)
-        for (int i = 0; i < MAIN_INVENTORY_SIZE; i++) {
+        // Scan main inventory (excluding hotbar): slots 9-35
+        int mainStartIndex = HOTBAR_SIZE;
+        int mainEndExclusive = HOTBAR_SIZE + MAIN_INVENTORY_SIZE;
+        for (int i = mainStartIndex; i < mainEndExclusive; i++) {
             ItemStack itemStack = playerInventory.getStack(i);
             InventorySlot slot = createSlotFromItemStack(i, itemStack);
             allSlots.add(slot);
